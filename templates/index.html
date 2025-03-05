@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Am I</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            background-image: url('static/assets/img/weather_stages.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: white;
+        }
+
+        h1 {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .weather-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .weather-card {
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            width: 45%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .weather-icon {
+            vertical-align: middle;
+            margin-left: 10px;
+            width: 50px;
+            height: 50px;
+        }
+
+        .weather-card h3, .weather-card h4, .weather-card p {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Am I</h1>
+    <div class="weather-container">
+        <!-- Local Weather Section -->
+        <div class="weather-card" id="local-weather">
+            <h2>Local Weather</h2>
+            <div id="local-weather-data"></div>
+        </div>
+
+        <!-- Forecast Weather Section -->
+        <div class="weather-card" id="forecast-weather">
+            <h2>Forecast Weather</h2>
+            <input type="text" id="forecast-city" placeholder="Enter city name" />
+            <input type="date" id="forecast-date" />
+            <button onclick="fetchForecastWeather()">Get Forecast</button>
+            <div id="forecast-weather-data"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "637143a30f4487f47aeb30eb6e415780";
+
+        window.onload = function () {
+            getLocation();
+        };
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        fetchLocalWeather(lat, lon);
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        function fetchLocalWeather(lat, lon) {
+            const url = `/get_local_weather?lat=${lat}&lon=${lon}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const iconUrl = `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+                    document.getElementById("local-weather-data").innerHTML =
+                        `<h3>City: ${data.name}</h3>
+                         <h3>Weather: ${data.weather[0].description} <img src="${iconUrl}" class="weather-icon" alt="${data.weather[0].description}" /></h3>
+                         <h4>Temperature: ${data.main.temp}°C</h4>
+                         <p>Humidity: ${data.main.humidity}%</p>
+                         <p>Wind Speed: ${data.wind.speed} m/s</p>`;
+                })
+                .catch(error => {
+                    console.error("Error fetching weather:", error);
+                });
+        }
+
+        function fetchForecastWeather() {
+            const city = document.getElementById("forecast-city").value;
+            const date = document.getElementById("forecast-date").value;
+
+            if (!city || !date) {
+                alert("Please enter a city and date.");
+                return;
+            }
+
+            const url = `/get_forecast?city=${city}&date=${date}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const forecast = data.list.find(item => item.dt_txt.includes(date));
+                    if (forecast) {
+                        const iconUrl = `http://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png`;
+                        document.getElementById("forecast-weather-data").innerHTML =
+                            `<h3>City: ${data.city.name}</h3>
+                             <h3>Weather: ${forecast.weather[0].description} <img src="${iconUrl}" class="weather-icon" alt="${forecast.weather[0].description}" /></h3>
+                             <h4>Temperature: ${forecast.main.temp}°C</h4>
+                             <p>Humidity: ${forecast.main.humidity}%</p>
+                             <p>Wind Speed: ${forecast.wind.speed} m/s</p>`;
+                    } else {
+                        document.getElementById("forecast-weather-data").innerText = "No forecast data available for this date.";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching forecast:", error);
+                });
+        }
+    </script>
+</body>
+</html>
